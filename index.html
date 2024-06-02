@@ -3,162 +3,393 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Task Tracker</title>
+    <title>The Game</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #000;
+            color: #fff;
             margin: 0;
+            padding: 0;
+            text-align: center;
         }
 
         .container {
-            background: #fff;
-            padding: 20px;
+            background: linear-gradient(45deg, #1d1d1d 25%, transparent 25%), 
+                        linear-gradient(-45deg, #1d1d1d 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #1d1d1d 75%), 
+                        linear-gradient(-45deg, transparent 75%, #1d1d1d 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            width: 300px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            max-width: 700px;
+            margin: auto;
+            animation: fadeInDown 1s ease forwards;
+        }
+
+        @keyframes fadeInDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h1, h2, h3 {
             text-align: center;
+            color: #f5ff00;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
         .exp-bar-container {
             width: 100%;
-            background-color: #ddd;
+            background-color: #333;
             border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+            animation: progress 1s ease forwards;
+        }
+
+        @keyframes progress {
+            0% {
+                width: 0;
+            }
+            100% {
+                width: calc(var(--exp) / var(--expPerLevel) * 100%);
+            }
         }
 
         .exp-bar {
             height: 20px;
-            background-color: #4caf50;
+            background-color: #ff7e00;
             width: 0;
+            transition: width 0.5s ease-in-out;
         }
 
         button {
-            background-color: #4caf50;
-            color: white;
+            background-color: #ff7e00;
+            color: #000;
             border: none;
-            padding: 10px 20px;
-            margin: 5px 0;
+            padding: 15px 25px;
+            margin: 10px 0;
             cursor: pointer;
             border-radius: 5px;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, color 0.3s;
+            width: 100%;
+            text-transform: uppercase;
+            font-size: 20px;
+            font-family: 'Press Start 2P', cursive;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
         button:hover {
-            background-color: #45a049;
+            background-color: #ffbd00;
         }
 
         ul {
             list-style: none;
             padding: 0;
         }
+
+        #balance, #level, #exp, #total-tasks, #double-xp-timer {
+            font-size: 24px;
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @media only screen and (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            button {
+                margin: 10px auto;
+            }
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(34, 34, 34, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            background-color: rgb(51, 51, 51);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .popup input {
+            width: 80%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .popup button {
+            background-color: #ff7e00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+            font-size: 16px;
+        }
     </style>
-    <!-- Add Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+   <script src="https://cdn.jsdelivr.net/gh/mathusummut/confetti.js/confetti.min.js"></script>
+
 </head>
 <body>
-    <h1>Employee Task Tracker</h1>
     <div class="container">
-        <h3>Add New Employee</h3>
-        <input type="text" id="employeeName" placeholder="Employee Name">
-        <button onclick="addEmployee()">Add Employee</button>
+        <h1>The game</h1>
+        <div id="employee">
+            <h2>Employee: <span id="employee-name">Joe Biden</span></h2>
+            <div class="exp-bar-container">
+                <div class="exp-bar" id="exp-bar" style="--exp: 0; --expPerLevel: 1500;"></div>
+            </div>
+            <p>Level: <span id="level">1</span></p>
+            <p>EXP: <span id="exp">0</span>/1150</p>
+            <div id="balance">
+                <h3>Balance</h3>
+                <p>$<span id="balance-amount">0</span></p>
+            </div>
+            <p>Total Tasks Done: <span id="total-tasks">0</span></p>
+            <p id="double-xp-timer" style="display: none;">Double XP active! Time left: <span id="double-xp-time-left">0:00:00</span></p>
+        </div>
+        <div id="tasks">
+            <h3>Tasks</h3>
+            <ul class="tasks">
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(20)">Remp/Sacs (+20 EXP)</button>
+                </li>
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(50)">Remp/Frigo (+50 EXP)</button>
+                </li>
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(50)">Décongelation (+50 EXP)</button>
+                </li>
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(50)">Nettoyage Cvap (+50 EXP)</button>
+                </li>
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(75)">Station Frite (+75 EXP)</button>
+                </li>
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(100)">Balai (+100 EXP)</button>
+                </li>
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(100)">Plaque (+100 EXP)</button>
+                </li>
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(150)">Friteuse (+150 EXP)</button>
+                </li>
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(500)">Finir Vaisselle (+500 EXP)</button>
+                </li>
+                <li>
+                    <span class="task-icon"></span>
+                    <button onclick="completeTask(1000)">Hebdomadaire (+1000 EXP)</button>
+                </li>
+            </ul>
+        </div>
     </div>
-    <div id="employees"></div>
+    <button onclick="resetData()">Reset Data</button>
+    <div class="popup" id="namePopup" style="display: none;">
+        <div class="popup-content">
+            <h2>Enter Your Name</h2>
+            <input type="text" id="nameInput" placeholder="Your Name">
+            <button onclick="saveName()">Save</button>
+        </div>
+    </div>
+    <div class="popup" id="rulesPopup" style="display: none;">
+        <div class="popup-content">
+            <h2>Game Rules</h2>
+            <p>1. Complete tasks to gain experience points (XP).</p>
+            <p>2. Every 15 tasks activate a 1-hour double XP boost.</p>
+            <p>3. Earn balance increases with each level up.</p>
+            <button onclick="closeRulesPopup()">Close</button
+            </div>
+        </div>
+        <script>
+           let level = 1;
+let exp = 0;
+let expPerLevel = 1150;
+let balance = 0;
+let totalTasksDone = 0;
+let doubleXPActive = false;
+let doubleXPDuration = 3600; // 1 hour in seconds
+let doubleXPStartTime = null;
+let doubleXPInterval;
 
-    <script>
-        // Your Firebase configuration
-        const firebaseConfig = {
-        apiKey: "AIzaSyAHtNbn5IT9kChj8iJnI52wl77B8lMFbpU",
-        authDomain: "employee-23d52.firebaseapp.com",
-        projectId: "employee-23d52",
-        storageBucket: "employee-23d52.appspot.com",
-        messagingSenderId: "237083129678",
-        appId: "1:237083129678:web:f005681be87f023966d01f",
-        measurementId: "G-ZEH9YSFMXM"
+function saveData() {
+    const data = {
+        level,
+        exp,
+        balance,
+        totalTasksDone,
+        doubleXPActive,
+        doubleXPStartTime: doubleXPStartTime ? doubleXPStartTime.getTime() : null
+    };
+    localStorage.setItem('employeeData', JSON.stringify(data));
+}
+
+function loadData() {
+    const savedData = localStorage.getItem('employeeData');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        level = data.level;
+        exp = data.exp;
+        balance = data.balance;
+        totalTasksDone = data.totalTasksDone;
+        doubleXPActive = data.doubleXPActive;
+        doubleXPStartTime = data.doubleXPStartTime ? new Date(data.doubleXPStartTime) : null;
+        updateUI();
+        if (doubleXPActive && doubleXPStartTime) {
+            startDoubleXPCountdown();
+        }
+    }
+}
+
+function updateUI() {
+    document.getElementById('level').textContent = level;
+    document.getElementById('exp').textContent = exp;
+    document.getElementById('exp-bar').style.width = (exp / expPerLevel * 100) + '%';
+    document.getElementById('balance-amount').textContent = balance;
+    document.getElementById('total-tasks').textContent = totalTasksDone;
+    if (doubleXPActive) {
+        document.getElementById('double-xp-timer').style.display = 'block';
+    } else {
+        document.getElementById('double-xp-timer').style.display = 'none';
+    }
+}
+
+function completeTask(expGained) {
+    if (doubleXPActive) {
+        expGained *= 2;
+    }
+    exp += expGained;
+    totalTasksDone += 1;
+
+    if (totalTasksDone % 15 === 0) {
+        activateDoubleXP();
+    }
+
+    while (exp >= expPerLevel) {
+        level += 1;
+        exp -= expPerLevel;
+        balance += 12.50; // Add $100 to balance for each level up
+        // Trigger confetti animation when the player levels up
+        confetti.start();
+    }
+
+    saveData();
+    updateUI();
+}
+
+
+function activateDoubleXP() {
+    doubleXPActive = true;
+    doubleXPStartTime = new Date();
+    startDoubleXPCountdown();
+    saveData();
+}
+
+function startDoubleXPCountdown() {
+    clearInterval(doubleXPInterval);
+    doubleXPInterval = setInterval(() => {
+        const currentTime = new Date();
+        const timeElapsed = Math.floor((currentTime - doubleXPStartTime) / 1000);
+        const timeLeft = doubleXPDuration - timeElapsed;
+
+        if (timeLeft <= 0) {
+            clearInterval(doubleXPInterval);
+            doubleXPActive = false;
+            doubleXPStartTime = null;
+            document.getElementById('double-xp-timer').style.display = 'none';
+        } else {
+            const hours = Math.floor(timeLeft / 3600);
+            const minutes = Math.floor((timeLeft % 3600) / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('double-xp-time-left').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        saveData();
+    }, 1000);
+}
+
+function resetData() {
+    if (confirm('Are you sure you want to reset all data?')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+function saveName() {
+    const name = document.getElementById('nameInput').value;
+    if (name) {
+        localStorage.setItem('employeeName', name);
+        document.getElementById('employee-name').textContent = name;
+        document.getElementById('namePopup').style.display = 'none';
+        document.getElementById('rulesPopup').style.display = 'flex'; // Show rules popup
+    } else {
+        alert('Please enter your name.');
+    }
+}
+
+function closeRulesPopup() {
+    document.getElementById('rulesPopup').style.display = 'none';
+    saveData(); // Ensure data is saved after rules popup is closed
+}
+
+window.onload = function() {
+    const savedName = localStorage.getItem('employeeName');
+    if (savedName) {
+        document.getElementById('employee-name').textContent = savedName;
+        loadData();
+    } else {
+        document.getElementById('namePopup').style.display = 'flex';
+    }
 };
 
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
 
-        const expPerLevel = 1500;
+        </script>
+        <div id="confetti-container"></div>
 
-        async function loadEmployees() {
-            const employeesSnapshot = await db.collection('employees').get();
-            const employees = employeesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderEmployees(employees);
-        }
-
-        async function addEmployee() {
-            const name = document.getElementById('employeeName').value;
-            if (name) {
-                const newEmployee = {
-                    name: name,
-                    exp: 0,
-                    level: 1
-                };
-                await db.collection('employees').add(newEmployee);
-                document.getElementById('employeeName').value = '';
-                loadEmployees();
-            }
-        }
-
-        async function completeTask(id, points) {
-            const employeeRef = db.collection('employees').doc(id);
-            const employeeSnapshot = await employeeRef.get();
-            const employee = employeeSnapshot.data();
-            employee.exp += points;
-            while (employee.exp >= expPerLevel) {
-                employee.exp -= expPerLevel;
-                employee.level++;
-            }
-            await employeeRef.update(employee);
-            loadEmployees();
-        }
-
-        function renderEmployees(employees) {
-            const employeesDiv = document.getElementById('employees');
-            employeesDiv.innerHTML = '';
-            employees.forEach((employee) => {
-                const employeeDiv = document.createElement('div');
-                employeeDiv.className = 'container';
-                employeeDiv.innerHTML = `
-                    <h2>${employee.name}</h2>
-                    <div class="exp-bar-container">
-                        <div class="exp-bar" style="width: ${(employee.exp / expPerLevel) * 100}%"></div>
-                    </div>
-                    <p>Level: <span>${employee.level}</span></p>
-                    <p>EXP: <span>${employee.exp}</span>/1500</p>
-                    <h3>Tasks</h3>
-                    <ul>
-                        <li>
-                            <button onclick="completeTask('${employee.id}', 100)">Complete Task 1 (+100 EXP)</button>
-                        </li>
-                        <li>
-                            <button onclick="completeTask('${employee.id}', 200)">Complete Task 2 (+200 EXP)</button>
-                        </li>
-                        <li>
-                            <button onclick="completeTask('${employee.id}', 300)">Complete Task 3 (+300 EXP)</button>
-                        </li>
-                    </ul>
-                `;
-                employeesDiv.appendChild(employeeDiv);
-            });
-        }
-
-        // Initial load
-        loadEmployees();
-    </script>
-</body>
-</html>
+    </body>
+    </html>
+    
